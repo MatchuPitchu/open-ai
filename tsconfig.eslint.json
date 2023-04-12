@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json", // use everything of tsconfig.json
+  // override "include" of tsconfig that eslintrc finds files in top level folder in project
+  "include": [
+    "./**/*",
+    "./**/.*",
+    "./**/.*.[tj]s?(x)"
+    // include all files with .ts(x)/.js(x) ending
+    // all hidden TS/JS dotfiles
+  ]
+}

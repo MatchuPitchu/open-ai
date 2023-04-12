@@ -1,0 +1,91 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  // inserts plugins installed via npm and make them available in this file -> you can use them in "rules" section
+  "plugins": ["react", "@typescript-eslint", "unused-imports", "import"],
+  // extend configuration with predefined rules
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:import/typescript",
+    "plugin:react/jsx-runtime",
+    "plugin:react-hooks/recommended"
+    // "plugin:prettier/recommended" // prettier should be at the end
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": "latest",
+    "tsconfigRootDir": "./", // connection to  TypeScript config file
+    "sourceType": "module"
+  },
+  // rules: https://eslint.org/docs/latest/rules/
+  "rules": {
+    "no-unused-vars": "off", // base rule must be disabled as it can report incorrect errors
+    "@typescript-eslint/no-empty-function": "warn",
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports"
+      }
+    ], // automatically detects if imported module is type or not and formats if needed
+    "unused-imports/no-unused-imports": "warn",
+    "react/jsx-props-no-spreading": "warn",
+    "react/self-closing-comp": [
+      "error",
+      {
+        "component": true,
+        "html": true
+      }
+    ],
+    "accessor-pairs": "warn",
+    "capitalized-comments": "off",
+    "default-case": "warn",
+    "default-case-last": "error",
+    "dot-notation": "warn",
+    "eqeqeq": "error",
+    "func-style": ["error", "expression"],
+    "import/order": [
+      "error",
+      {
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
+        "pathGroups": [
+          {
+            "pattern": "@/**/**",
+            "group": "parent",
+            "position": "before"
+          }
+        ],
+        "alphabetize": { "order": "asc" }
+      }
+    ],
+    "import/no-duplicates": "error",
+    "max-depth": ["warn", 3],
+    "max-nested-callbacks": ["warn", 3],
+    "multiline-comment-style": ["warn", "separate-lines"],
+    "no-console": "warn",
+    "no-else-return": ["error", { "allowElseIf": false }],
+    "no-eq-null": "error",
+    "no-lonely-if": "warn",
+    "no-nested-ternary": "warn",
+    "no-shadow": "off",
+    "no-template-curly-in-string": "warn",
+    "no-unreachable-loop": "warn",
+    "no-use-before-define": "warn",
+    "no-useless-rename": "error",
+    "no-var": "error",
+    "prefer-arrow-callback": "error",
+    "prefer-const": "error",
+    "prefer-object-spread": "error",
+    "prefer-rest-params": "error",
+    "prefer-template": "error",
+    "require-await": "error"
+  }
+}

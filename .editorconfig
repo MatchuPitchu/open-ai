@@ -1,0 +1,17 @@
+# editorconfig.org
+# set to true, otherwise EditorConfig looks for .editorconfig file outside of project
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace =  true
+charset = utf-8
+# editorconfig-tools is unable to ignore long strings or urls
+max_line_length = off
+
+# yaml files don't work with tab indentation
+[*.{yml,yaml}]
+indent_style = space
