@@ -12,6 +12,7 @@ const openai = new OpenAIApi(configuration);
 // const listOfModels = await openai.listModels();
 
 // TODO: Context Infos (Verlauf speichern) - Achtung: sind mehr Token und kostet mehr
+// TODO: API response streamen
 // TODO: prompts templates für typische Fälle und ich dann nur Input values ausfüllen
 
 export const App = () => {
