@@ -24,9 +24,7 @@ export const App = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isWorking) return;
-
-    if (!inputRef.current || !inputRef.current.value) return;
+    if (isWorking || !inputRef.current || !inputRef.current.value) return;
 
     try {
       setIsWorking(true);
