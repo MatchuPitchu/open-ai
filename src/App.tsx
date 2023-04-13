@@ -14,6 +14,8 @@ const openai = new OpenAIApi(configuration);
 // TODO: Context Infos (Verlauf speichern) - Achtung: sind mehr Token und kostet mehr
 // TODO: API response streamen
 // TODO: prompts templates für typische Fälle und ich dann nur Input values ausfüllen
+// TODO: add model select button mit Hinweis und Link Pricing OpenAI: gpt-4 is more expensive
+// TODO: model 3.5 für tests nutzen, da günstiger: https://openai.com/pricing
 
 export const App = () => {
   const [isWorking, setIsWorking] = useState(false);
@@ -29,7 +31,7 @@ export const App = () => {
     try {
       setIsWorking(true);
       const completion = await openai.createChatCompletion({
-        model: 'gpt-4',
+        model: 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: inputRef.current.value }]
       });
 
