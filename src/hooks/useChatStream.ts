@@ -61,8 +61,6 @@ const createChatMessage = ({ content, role, ...restOfParams }: ChatMessageParams
 export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  console.log(messages);
-
   const resetMessages = () => setMessages([]);
 
   const handleChunkResponse = (event: SSEEvent, source: SSE) => {
@@ -75,7 +73,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
     let payload;
 
     try {
-      payload = JSON.parse(event?.data || '{}');
+      payload = JSON.parse(event?.data ?? '{}');
     } catch (error) {
       payload = undefined;
     }

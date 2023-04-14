@@ -1,6 +1,8 @@
 import { Fragment, useRef } from 'react';
+import ReactDOMServer from 'react-dom/server';
+import { CodeBlock } from './components/CodeBlock';
 import { useChatCompletion } from './hooks/useChatCompletion';
-import { useChatStream } from './hooks/useChatStream';
+import { ChatMessage, useChatStream } from './hooks/useChatStream';
 import './App.css';
 
 /*** List available models ***/
@@ -49,6 +51,8 @@ export const App = () => {
     // submitCompletionPrompt([{ role: 'user', content: inputRef.current.value }]);
   };
 
+  const createCodeBlock = (block: string, language = 'typescript') => <CodeBlock code={block} language={language} />;
+
   return (
     <main className="app">
       <form className="chat-form" onSubmit={handleSubmit}>
@@ -71,25 +75,58 @@ export const App = () => {
         {messages.length === 0 && <div>Noch keine Nachricht Chat (Streaming)</div>}
 
         {messages.length > 0 &&
-          messages.map((chatResponse, index) => (
-            <Fragment key={index}>
-              <div className="chat-response-list__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
-              <div className="chat-response-list__content">
-                <pre className="chat-response-list__response">{chatResponse.content}</pre>
-                {!chatResponse.meta.loading && (
-                  <div className="meta-data">
-                    <div className="meta-data__item">Zeit: {formatDate(new Date(chatResponse.timestamp))}</div>
-                    {chatResponse.role === 'assistant' && (
-                      <>
-                        <div className="meta-data__item">Tokens: {chatResponse.meta.chunks.length}</div>
-                        <div className="meta-data__item">Antwort Zeit: {chatResponse.meta.responseTime}</div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Fragment>
-          ))}
+          messages.map((chatResponse, index) => {
+            // console.log('RESPONSE', chatResponse.meta);
+            // console.log('CONTENT', chatResponse.content);
+            // console.log('CHAT', chatResponse);
+            let formattedChatResponse: (string | JSX.Element)[] = [chatResponse.content];
+
+            const backTicksRegex = /```/;
+            const codeBlockRegex = /```(\w+)\n([\s\S]+?)\n```/;
+            const match = chatResponse.content.match(codeBlockRegex);
+
+            if (match) {
+              const language = match[1];
+              formattedChatResponse = chatResponse.content.split('```').map((part, index) => {
+                if (index % 2 === 1) {
+                  const partWithoutLanguage = part.replace(language, '');
+                  return createCodeBlock(partWithoutLanguage, language);
+                }
+                return part;
+              });
+            } else if (backTicksRegex.test(chatResponse.content)) {
+              formattedChatResponse = chatResponse.content.split(backTicksRegex).map((part, index) => {
+                if (index % 2 === 1) {
+                  return createCodeBlock(part);
+                }
+                return part;
+              });
+            }
+
+            return (
+              <Fragment key={index}>
+                <div className="chat-response-list__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
+                <div className="chat-response-list__content">
+                  <pre className="chat-response-list__response">
+                    {formattedChatResponse.map((content, index) => (
+                      <Fragment key={index}>{content}</Fragment>
+                    ))}
+                  </pre>
+                  {!chatResponse.meta.loading && (
+                    <div className="meta-data">
+                      <div className="meta-data__item">Zeit: {formatDate(new Date(chatResponse.timestamp))}</div>
+                      {chatResponse.role === 'assistant' && (
+                        <>
+                          <div className="meta-data__item">Tokens: {chatResponse.meta.chunks.length}</div>
+                          <div className="meta-data__item">Antwort Zeit: {chatResponse.meta.responseTime}</div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Fragment>
+            );
+          })}
       </section>
 
       {/* <section className="chat-response-list">

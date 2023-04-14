@@ -1,0 +1,5 @@
+.pre {
+  border-radius: var(--border-radius);
+  scrollbar-width: thin;
+  overflow-x: 'auto';
+}

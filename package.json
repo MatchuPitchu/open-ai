@@ -13,9 +13,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@types/react-syntax-highlighter": "^15.5.6",
     "openai": "^3.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-syntax-highlighter": "^15.5.0",
     "sse.js": "^0.6.1"
   },
   "devDependencies": {
