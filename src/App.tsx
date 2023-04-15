@@ -1,7 +1,6 @@
 import { Fragment, useReducer, useRef } from 'react';
 import { CodeBlock } from './components/CodeBlock';
 import { Highlight } from './components/Highlight';
-// import { useChatCompletion } from './hooks/useChatCompletion';
 import { useChatStream } from './hooks/useChatStream';
 import './App.css';
 
@@ -32,32 +31,22 @@ export const App = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [shouldHighlightSyntax, switchCheckbox] = useReducer((prev) => !prev, false);
 
-  // V1 Single Response without Context Memory
-  // const { chatCourse, submitCompletionPrompt, isWorking } = useChatCompletion({
-  //   model: 'gpt-3.5-turbo',
-  //   apiKey: import.meta.env.VITE_OPEN_AI_KEY
-  // });
-
   // V2 Response Streaming with Context Memory
-  // TODO: Add reset context (sonst Token werden teurer)
-  const { messages, submitStreamingPrompt, resetMessages } = useChatStream({
+  const { messages, submitStreamingPrompt, resetMessages, isLoading, closeStream } = useChatStream({
     model: 'gpt-3.5-turbo',
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
   });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // if (isWorking) return;
 
     if (!inputRef.current) return;
 
     const content = shouldHighlightSyntax
-      ? `${inputRef.current.value}. Use syntax highlighting with backticks and the specified language.`
+      ? `${inputRef.current.value} Please return the code blocks in your response with backticks and the programming language.`
       : inputRef.current.value;
 
     submitStreamingPrompt([{ role: 'user', content }]);
-
-    // submitCompletionPrompt([{ role: 'user', content: inputRef.current.value }]);
   };
 
   const createCodeBlock = (block: string, language = 'typescript') => <CodeBlock code={block} language={language} />;
@@ -117,73 +106,67 @@ export const App = () => {
   };
 
   return (
-    <main className="app">
-      <form className="chat-form" onSubmit={handleSubmit}>
-        <textarea className="chat-form__input" ref={inputRef} />
-        <div className="chat-form__buttons">
-          <button
-            type="submit"
-            className="chat-form__button"
-            disabled={messages.length > 0 && messages[messages.length - 1].meta.loading}
-          >
-            Submit
-          </button>
-          <button type="reset" className="chat-form__reset" onClick={resetMessages}>
-            Reset Context
-          </button>
-        </div>
+    <>
+      <main className="app">
+        <form className="chat-form" onSubmit={handleSubmit}>
+          <textarea className="chat-form__input" ref={inputRef} />
+          <div className="chat-form__buttons">
+            <button
+              type="submit"
+              className="chat-form__button"
+              disabled={messages.length > 0 && messages[messages.length - 1].meta.loading}
+            >
+              Submit
+            </button>
+            <button type="reset" className="chat-form__reset" onClick={resetMessages}>
+              Reset Context
+            </button>
+          </div>
 
-        <div className="chat-form__checkbox">
-          <input type="checkbox" id="syntax-highlighting" checked={shouldHighlightSyntax} onChange={switchCheckbox} />
-          <label htmlFor="syntax-highlighting">Add Syntax Highlighting</label>
-        </div>
-      </form>
+          <div className="chat-form__checkbox">
+            <input type="checkbox" id="syntax-highlighting" checked={shouldHighlightSyntax} onChange={switchCheckbox} />
+            <label htmlFor="syntax-highlighting">Add Syntax Highlighting</label>
+          </div>
+        </form>
 
-      <section className="chat-response-list">
-        {messages.length === 0 && <div>Noch keine Nachricht Chat (Streaming)</div>}
+        <section className="chat-response-list">
+          {messages.length === 0 && <div>Noch keine Nachricht Chat (Streaming)</div>}
 
-        {messages.length > 0 &&
-          messages.map((chatResponse, index) => {
-            const formattedChatResponse = getFormattedChatResponse(chatResponse.content);
+          {messages.length > 0 &&
+            messages.map((chatResponse, index) => {
+              const formattedChatResponse = getFormattedChatResponse(chatResponse.content);
 
-            return (
-              <Fragment key={index}>
-                <div className="chat-response-list__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
-                <div className="chat-response-list__content">
-                  <pre className="chat-response-list__response">
-                    {formattedChatResponse.map((content, index) => (
-                      <Fragment key={index}>{content}</Fragment>
-                    ))}
-                  </pre>
-                  {!chatResponse.meta.loading && (
-                    <div className="meta-data">
-                      <div className="meta-data__item">Zeit: {formatDate(new Date(chatResponse.timestamp))}</div>
-                      {chatResponse.role === 'assistant' && (
-                        <>
-                          <div className="meta-data__item">Tokens: {chatResponse.meta.chunks.length}</div>
-                          <div className="meta-data__item">Antwort Zeit: {chatResponse.meta.responseTime}</div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </Fragment>
-            );
-          })}
-      </section>
-
-      {/* <section className="chat-response-list">
-        {chatCourse.length === 0 && <div>Noch keine Nachricht Chat (non Streaming)</div>}
-
-        {chatCourse.map((chatResponse, index) => (
-          <Fragment key={index}>
-            <div className="chat-response-list__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
-            <div className="chat-response-list__content">
-              <pre className="chat-response-list__response">{chatResponse.content}</pre>
-            </div>
-          </Fragment>
-        ))}
-      </section> */}
-    </main>
+              return (
+                <Fragment key={index}>
+                  <div className="chat-response-list__role">
+                    {chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}
+                  </div>
+                  <div className="chat-response-list__content">
+                    <pre className="chat-response-list__response">
+                      {formattedChatResponse.map((content, index) => (
+                        <Fragment key={index}>{content}</Fragment>
+                      ))}
+                    </pre>
+                    {!chatResponse.meta.loading && (
+                      <div className="meta-data">
+                        <div className="meta-data__item">Zeit: {formatDate(new Date(chatResponse.timestamp))}</div>
+                        {chatResponse.role === 'assistant' && (
+                          <>
+                            <div className="meta-data__item">Tokens: {chatResponse.meta.chunks.length}</div>
+                            <div className="meta-data__item">Antwort Zeit: {chatResponse.meta.responseTime}</div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Fragment>
+              );
+            })}
+        </section>
+      </main>
+      <button className={`button button--abort ${isLoading ? 'active' : ''}`} onClick={closeStream}>
+        Abfrage abbrechen
+      </button>
+    </>
   );
 };

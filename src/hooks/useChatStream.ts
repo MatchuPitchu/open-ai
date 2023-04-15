@@ -62,63 +62,73 @@ const createChatMessage = ({ content, role, ...restOfParams }: ChatMessageParams
 
 export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [source, setSource] = useState<SSE>();
+  const [isLoading, setIsLoading] = useState(false);
 
   const resetMessages = () => setMessages([]);
 
-  const handleChunkResponse = (event: SSEEvent, source: SSE) => {
-    // if [DONE] token is found, stream was finished
-    if (event?.data === '[DONE]') {
-      source.close();
-    }
+  const closeStream = useCallback(() => {
+    setIsLoading(false);
+    source?.close();
+  }, [source]);
 
-    // Parse the data from the update.
-    let payload;
+  const handleChunkResponse = useCallback(
+    (event: SSEEvent) => {
+      // if [DONE] token is found, stream was finished
+      if (event?.data === '[DONE]') {
+        closeStream();
+      }
 
-    try {
-      payload = JSON.parse(event?.data ?? '{}');
-    } catch (error) {
-      payload = undefined;
-    }
+      // Parse the data from the update.
+      let payload;
 
-    const chunk: ChatCompletionIncomingChunk = payload?.choices?.[0]?.delta;
+      try {
+        payload = JSON.parse(event?.data ?? '{}');
+      } catch (error) {
+        payload = undefined;
+      }
 
-    // If the chunk is well-formed, update the messages list, specifically update the last
-    // message entry in the list with the most recently received chunk.
-    if (!chunk) return;
+      const chunk: ChatCompletionIncomingChunk = payload?.choices?.[0]?.delta;
 
-    setMessages((prev) => {
-      const lastMessageChunkAdded = {
-        content: `${prev[prev.length - 1].content}${chunk?.content ?? ''}`,
-        role: `${prev[prev.length - 1].role}${chunk?.role ?? ''}`,
-        timestamp: 0,
-        meta: {
-          ...prev[prev.length - 1].meta,
-          chunks: [
-            ...prev[prev.length - 1].meta.chunks,
-            {
-              content: chunk?.content ?? '',
-              role: chunk?.role ?? '',
-              timestamp: Date.now()
-            }
-          ]
-        }
-      };
+      // If the chunk is well-formed, update the messages list, specifically update the last
+      // message entry in the list with the most recently received chunk.
+      if (!chunk) return;
 
-      const updatedMessages = prev.slice(0, -1);
+      setMessages((prev) => {
+        const lastMessageChunkAdded = {
+          content: `${prev[prev.length - 1].content}${chunk?.content ?? ''}`,
+          role: `${prev[prev.length - 1].role}${chunk?.role ?? ''}`,
+          timestamp: 0,
+          meta: {
+            ...prev[prev.length - 1].meta,
+            chunks: [
+              ...prev[prev.length - 1].meta.chunks,
+              {
+                content: chunk?.content ?? '',
+                role: chunk?.role ?? '',
+                timestamp: Date.now()
+              }
+            ]
+          }
+        };
 
-      updatedMessages.push(lastMessageChunkAdded);
+        const updatedMessages = prev.slice(0, -1);
 
-      return updatedMessages;
-    });
-  };
+        updatedMessages.push(lastMessageChunkAdded);
+
+        return updatedMessages;
+      });
+    },
+    [closeStream]
+  );
 
   const handleConnectionClosed = (event: SSEEvent, beforeTimestamp: number) => {
     // readyState: 0 - connecting, 1 - open, 2 - closed
     if (event.readyState && event.readyState > 1) {
       // Determine the final timestamp, and calculate the number of seconds the full request took.
       const afterTimestamp = Date.now();
-      const diffInSeconds = (afterTimestamp - beforeTimestamp) / 1000;
-      const formattedDiff = `${diffInSeconds.toFixed(2)} Sekunden`;
+      const differenceInSeconds = (afterTimestamp - beforeTimestamp) / 1000;
+      const formattedDiff = `${differenceInSeconds.toFixed(2)} Sekunden`;
 
       // Update the messages list, specifically update the last message entry with the final
       // details of the full request/response.
@@ -145,10 +155,13 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
     (newMessages: ChatMessageParams[]) => {
       // Don't let two streaming calls occur at the same time. If the last message in the list has
       // a `loading` state set to true, we know there is a request in progress.
-      if (messages[messages.length - 1]?.meta?.loading) return;
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.meta?.loading) return;
 
       // if empty string as prompt, do not make a request.
       if (!newMessages[0].content) return;
+
+      setIsLoading(true);
 
       // Record the timestamp before the request starts.
       const beforeTimestamp = Date.now();
@@ -163,11 +176,11 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
 
       setMessages(updatedMessages);
 
-      // define request headers
-      const options = {
+      const requestOptions = {
+        // define request headers
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
         },
         method: 'POST',
         payload: JSON.stringify({
@@ -183,18 +196,20 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       } as const;
 
       // create SSE request to the OpenAI chat completion API endpoint
-      const source = new SSE(CHAT_COMPLETIONS_URL, options);
+      const source = new SSE(CHAT_COMPLETIONS_URL, requestOptions);
 
       // listen for event that chunk is received -> process it and store it in the latest message
-      source.addEventListener('message', (event) => handleChunkResponse(event, source));
+      source.addEventListener('message', handleChunkResponse);
 
       // listen for connection closed event
       source.addEventListener('readystatechange', (event) => handleConnectionClosed(event, beforeTimestamp));
 
       source.stream();
+
+      setSource(source);
     },
-    [apiKey, messages, model]
+    [apiKey, handleChunkResponse, messages, model]
   );
 
-  return { messages, submitStreamingPrompt, resetMessages };
+  return { messages, submitStreamingPrompt, resetMessages, isLoading, closeStream };
 };
