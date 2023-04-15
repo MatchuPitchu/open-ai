@@ -52,7 +52,7 @@ export const App = () => {
     if (!inputRef.current) return;
 
     const content = shouldHighlightSyntax
-      ? `${inputRef.current.value} Use syntax highlighting`
+      ? `${inputRef.current.value}. Use syntax highlighting with backticks and the specified language.`
       : inputRef.current.value;
 
     submitStreamingPrompt([{ role: 'user', content }]);
@@ -135,7 +135,7 @@ export const App = () => {
 
         <div className="chat-form__checkbox">
           <input type="checkbox" id="syntax-highlighting" checked={shouldHighlightSyntax} onChange={switchCheckbox} />
-          <label htmlFor="syntax-highlighting">Use Syntax Highlighting</label>
+          <label htmlFor="syntax-highlighting">Add Syntax Highlighting</label>
         </div>
       </form>
 
