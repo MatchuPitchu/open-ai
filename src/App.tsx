@@ -1,8 +1,8 @@
-import { Fragment, useRef } from 'react';
-import ReactDOMServer from 'react-dom/server';
+import { Fragment, useReducer, useRef } from 'react';
 import { CodeBlock } from './components/CodeBlock';
-import { useChatCompletion } from './hooks/useChatCompletion';
-import { ChatMessage, useChatStream } from './hooks/useChatStream';
+import { Highlight } from './components/Highlight';
+// import { useChatCompletion } from './hooks/useChatCompletion';
+import { useChatStream } from './hooks/useChatStream';
 import './App.css';
 
 /*** List available models ***/
@@ -24,8 +24,13 @@ const formatDate = (date: Date) =>
     second: 'numeric'
   });
 
+const backTicksRegex = /`{3}/;
+const codeBlockRegex = /`{3}(\w+)\n([\s\S]+?)\n`{3}/;
+const singleBackTickRegex = /`(?!`+)/;
+
 export const App = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [shouldHighlightSyntax, switchCheckbox] = useReducer((prev) => !prev, false);
 
   // V1 Single Response without Context Memory
   // const { chatCourse, submitCompletionPrompt, isWorking } = useChatCompletion({
@@ -44,14 +49,72 @@ export const App = () => {
     event.preventDefault();
     // if (isWorking) return;
 
-    if (!inputRef.current || !inputRef.current.value) return;
+    if (!inputRef.current) return;
 
-    submitStreamingPrompt([{ role: 'user', content: inputRef.current.value }]);
+    const content = shouldHighlightSyntax
+      ? `${inputRef.current.value} Use syntax highlighting`
+      : inputRef.current.value;
+
+    submitStreamingPrompt([{ role: 'user', content }]);
 
     // submitCompletionPrompt([{ role: 'user', content: inputRef.current.value }]);
   };
 
   const createCodeBlock = (block: string, language = 'typescript') => <CodeBlock code={block} language={language} />;
+  const createHighlightBlock = (text: string) => <Highlight>{text}</Highlight>;
+
+  const addCodeBlock = (codeBlock: RegExpMatchArray, currentText: string) => {
+    const language = codeBlock[1];
+    return currentText.split(backTicksRegex).map((part, index) => {
+      if (index % 2 === 1) {
+        const partWithoutLanguage = part.replace(language, '');
+        return createCodeBlock(partWithoutLanguage, language);
+      }
+      return part;
+    });
+  };
+
+  const addCodeBlockWithoutLanguage = (currentText: string) => {
+    return currentText.split(backTicksRegex).map((part, index) => {
+      if (index % 2 === 1) {
+        return createCodeBlock(part);
+      }
+      return part;
+    });
+  };
+
+  const addHighlighting = (currentResponse: (string | JSX.Element)[]) => {
+    return currentResponse.flatMap((part) => {
+      if (typeof part !== 'string') return part;
+
+      const highlightedPart = part.split(singleBackTickRegex).map((subPart, index) => {
+        if (index % 2 === 1) {
+          return createHighlightBlock(subPart);
+        }
+        return subPart;
+      });
+
+      return highlightedPart;
+    });
+  };
+
+  const getFormattedChatResponse = (currentText: string) => {
+    let formattedChatResponse: (string | JSX.Element)[] = [currentText];
+
+    const codeBlock = currentText.match(codeBlockRegex);
+
+    if (codeBlock) {
+      formattedChatResponse = addCodeBlock(codeBlock, currentText);
+    } else if (backTicksRegex.test(currentText)) {
+      formattedChatResponse = addCodeBlockWithoutLanguage(currentText);
+    }
+
+    if (singleBackTickRegex.test(currentText)) {
+      formattedChatResponse = addHighlighting(formattedChatResponse);
+    }
+
+    return formattedChatResponse;
+  };
 
   return (
     <main className="app">
@@ -69,6 +132,11 @@ export const App = () => {
             Reset Context
           </button>
         </div>
+
+        <div className="chat-form__checkbox">
+          <input type="checkbox" id="syntax-highlighting" checked={shouldHighlightSyntax} onChange={switchCheckbox} />
+          <label htmlFor="syntax-highlighting">Use Syntax Highlighting</label>
+        </div>
       </form>
 
       <section className="chat-response-list">
@@ -76,32 +144,7 @@ export const App = () => {
 
         {messages.length > 0 &&
           messages.map((chatResponse, index) => {
-            // console.log('RESPONSE', chatResponse.meta);
-            // console.log('CONTENT', chatResponse.content);
-            // console.log('CHAT', chatResponse);
-            let formattedChatResponse: (string | JSX.Element)[] = [chatResponse.content];
-
-            const backTicksRegex = /```/;
-            const codeBlockRegex = /```(\w+)\n([\s\S]+?)\n```/;
-            const match = chatResponse.content.match(codeBlockRegex);
-
-            if (match) {
-              const language = match[1];
-              formattedChatResponse = chatResponse.content.split('```').map((part, index) => {
-                if (index % 2 === 1) {
-                  const partWithoutLanguage = part.replace(language, '');
-                  return createCodeBlock(partWithoutLanguage, language);
-                }
-                return part;
-              });
-            } else if (backTicksRegex.test(chatResponse.content)) {
-              formattedChatResponse = chatResponse.content.split(backTicksRegex).map((part, index) => {
-                if (index % 2 === 1) {
-                  return createCodeBlock(part);
-                }
-                return part;
-              });
-            }
+            const formattedChatResponse = getFormattedChatResponse(chatResponse.content);
 
             return (
               <Fragment key={index}>

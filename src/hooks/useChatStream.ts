@@ -46,17 +46,19 @@ const officialOpenAIParams = ({ content, role }: ChatMessage): ChatCompletionRes
 
 // Utility method for transforming a chat message that may or may not be decorated with metadata
 // to a fully-fledged chat message with metadata.
-const createChatMessage = ({ content, role, ...restOfParams }: ChatMessageParams): ChatMessage => ({
-  content,
-  role,
-  timestamp: restOfParams.timestamp || Date.now(),
-  meta: {
-    loading: false,
-    responseTime: '',
-    chunks: [],
-    ...restOfParams.meta
-  }
-});
+const createChatMessage = ({ content, role, ...restOfParams }: ChatMessageParams): ChatMessage => {
+  return {
+    content,
+    role,
+    timestamp: restOfParams.timestamp || Date.now(),
+    meta: {
+      loading: false,
+      responseTime: '',
+      chunks: [],
+      ...restOfParams.meta
+    }
+  };
+};
 
 export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -140,17 +142,13 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   };
 
   const submitStreamingPrompt = useCallback(
-    (newMessages?: ChatMessageParams[]) => {
+    (newMessages: ChatMessageParams[]) => {
       // Don't let two streaming calls occur at the same time. If the last message in the list has
       // a `loading` state set to true, we know there is a request in progress.
       if (messages[messages.length - 1]?.meta?.loading) return;
 
-      // If the array is empty or there are no new messages submited, that is a special request to
-      // clear the `messages` queue and prepare to start over, do not make a request.
-      if (!newMessages || newMessages.length < 1) {
-        resetMessages();
-        return;
-      }
+      // if empty string as prompt, do not make a request.
+      if (!newMessages[0].content) return;
 
       // Record the timestamp before the request starts.
       const beforeTimestamp = Date.now();
