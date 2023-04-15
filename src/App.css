@@ -109,18 +109,13 @@ pre {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-
+  border-radius: var(--border-radius);
   background-color: var(--color-bg);
   cursor: pointer;
 }
 
 .chat-form__checkbox input[type='checkbox'] {
   display: none;
-}
-
-.chat-form__checkbox > input {
-  margin: unset;
-  cursor: inherit;
 }
 
 .chat-form__checkbox > label {
