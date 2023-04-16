@@ -2,13 +2,11 @@ import { Fragment, useReducer, useRef } from 'react';
 import { CodeBlock } from './components/CodeBlock';
 import { Highlight } from './components/Highlight';
 import { useChatStream } from './hooks/useChatStream';
+import type { FormEvent } from 'react';
 import './App.css';
 
-/*** List available models ***/
-// const listOfModels = await openai.listModels();
-
 // TODO: Context Infos (Verlauf speichern) - Achtung: sind mehr Token und kostet mehr
-// TODO: API response streamen
+// // TODO: API response streamen
 // TODO: prompts templates für typische Fälle und ich dann nur Input values ausfüllen
 // TODO: add model select button mit Hinweis und Link Pricing OpenAI: gpt-4 is more expensive
 // TODO: model 3.5 für tests nutzen, da günstiger: https://openai.com/pricing
@@ -23,13 +21,13 @@ const formatDate = (date: Date) =>
     second: 'numeric'
   });
 
-const backTicksRegex = /`{3}/;
-const codeBlockRegex = /`{3}(\w+)\n([\s\S]+?)\n`{3}/;
-const singleBackTickRegex = /`(?!`+)/;
+const BACKTICKS_REGEX = /`{3}/;
+const SINGLE_BACKTICKS_REGEX = /`(?!`+)/;
+const LANGUAGE_IN_CODE_BLOCK_REGEX = /^\w+(?=\n)/;
 
 export const App = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [shouldHighlightSyntax, switchCheckbox] = useReducer((prev) => !prev, false);
+  const [shouldHighlightSyntax, toggleHighlightSyntax] = useReducer((prev) => !prev, false);
 
   // V2 Response Streaming with Context Memory
   const { messages, submitStreamingPrompt, resetMessages, isLoading, closeStream } = useChatStream({
@@ -37,79 +35,70 @@ export const App = () => {
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
   });
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!inputRef.current) return;
+    if (inputRef.current?.value) {
+      inputRef.current.value = `${inputRef.current.value} \n\n${
+        shouldHighlightSyntax
+          ? 'Please use triple backticks for syntax highlighting for each code block in your response.'
+          : ''
+      }`;
 
-    const content = shouldHighlightSyntax
-      ? `${inputRef.current.value} Return your response with code blocks using triple backticks before and after the block and with the language identifier for syntax highlighting.`
-      : inputRef.current.value;
-
-    submitStreamingPrompt([{ role: 'user', content }]);
+      submitStreamingPrompt([{ role: 'user', content: inputRef.current.value }]);
+    }
   };
 
   const createCodeBlock = (block: string, language = '') => <CodeBlock code={block} language={language} />;
   const createHighlightBlock = (text: string) => <Highlight>{text}</Highlight>;
 
-  const addCodeBlock = (codeBlock: RegExpMatchArray, currentText: string) => {
-    const language = codeBlock[1];
-    return currentText.split(backTicksRegex).map((part, index) => {
-      if (index % 2 === 1) {
-        const partWithoutLanguage = part.replace(language, '');
-        return createCodeBlock(partWithoutLanguage, language);
-      }
-      return part;
-    });
-  };
-
-  const addCodeBlockWithoutLanguage = (currentText: string) => {
-    return currentText.split(backTicksRegex).map((part, index) => {
-      if (index % 2 === 1) {
-        return createCodeBlock(part);
-      }
-      return part;
-    });
-  };
-
-  const addHighlighting = (currentResponse: (string | JSX.Element)[]) => {
-    return currentResponse.flatMap((part) => {
+  const addHighlighting = (textBlocks: (string | JSX.Element)[]) => {
+    return textBlocks.flatMap((part) => {
       if (typeof part !== 'string') return part;
 
-      const highlightedPart = part.split(singleBackTickRegex).map((subPart, index) => {
-        if (index % 2 === 1) {
-          return createHighlightBlock(subPart);
-        }
-        return subPart;
+      const formattedParts = part.split(SINGLE_BACKTICKS_REGEX).map((subPart, index) => {
+        return index % 2 === 0 ? subPart : createHighlightBlock(subPart);
       });
 
-      return highlightedPart;
+      return formattedParts;
     });
   };
 
-  const getFormattedChatResponse = (currentText: string) => {
-    let formattedChatResponse: (string | JSX.Element)[] = [currentText];
+  const addCodeBlocks = (text: string) => {
+    const blocks = text.split(BACKTICKS_REGEX);
 
-    const codeBlock = currentText.match(codeBlockRegex);
+    return blocks.map((part, index) => {
+      if (index % 2 === 0) {
+        return part;
+      }
 
-    if (codeBlock) {
-      formattedChatResponse = addCodeBlock(codeBlock, currentText);
-    } else if (backTicksRegex.test(currentText)) {
-      formattedChatResponse = addCodeBlockWithoutLanguage(currentText);
+      const language = part.match(LANGUAGE_IN_CODE_BLOCK_REGEX)?.[0];
+      const partWithoutLanguage = part.replace(language ?? '', '');
+      return createCodeBlock(partWithoutLanguage, language);
+    });
+  };
+
+  const getFormattedText = (text: string) => {
+    let formattedText = addCodeBlocks(text);
+
+    if (SINGLE_BACKTICKS_REGEX.test(text)) {
+      formattedText = addHighlighting(formattedText);
     }
 
-    if (singleBackTickRegex.test(currentText)) {
-      formattedChatResponse = addHighlighting(formattedChatResponse);
-    }
-
-    return formattedChatResponse;
+    return formattedText;
   };
 
   return (
     <>
       <main className="app">
         <form className="chat-form" onSubmit={handleSubmit}>
-          <textarea className="chat-form__input" ref={inputRef} autoFocus placeholder="Schreibe eine Nachricht ..." />
+          <textarea
+            className="chat-form__input"
+            ref={inputRef}
+            placeholder="Schreibe eine Nachricht ..."
+            autoFocus
+            spellCheck={false}
+          />
           <div className="chat-form__buttons">
             <button
               type="submit"
@@ -129,7 +118,7 @@ export const App = () => {
               type="checkbox"
               id="syntax-highlighting"
               checked={shouldHighlightSyntax}
-              onChange={switchCheckbox}
+              onChange={toggleHighlightSyntax}
             />
             <label className="checkbox__label" htmlFor="syntax-highlighting">
               Add Syntax Highlighting
@@ -141,27 +130,25 @@ export const App = () => {
           {messages.length === 0 && <div>Noch keine Nachricht im Chat (Streaming)</div>}
 
           {messages.length > 0 &&
-            messages.map((chatResponse, index) => {
-              const formattedChatResponse = getFormattedChatResponse(chatResponse.content);
+            messages.map((message, index) => {
+              const formattedText = getFormattedText(message.content);
 
               return (
                 <Fragment key={index}>
-                  <div className="chat-response-list__role">
-                    {chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}
-                  </div>
+                  <div className="chat-response-list__role">{message.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
                   <div className="chat-response-list__content">
                     <pre className="chat-response-list__response">
-                      {formattedChatResponse.map((content, index) => (
+                      {formattedText.map((content, index) => (
                         <Fragment key={index}>{content}</Fragment>
                       ))}
                     </pre>
-                    {!chatResponse.meta.loading && (
+                    {!message.meta.loading && (
                       <div className="meta-data">
-                        <div className="meta-data__item">Zeit: {formatDate(new Date(chatResponse.timestamp))}</div>
-                        {chatResponse.role === 'assistant' && (
+                        <div className="meta-data__item">Zeit: {formatDate(new Date(message.timestamp))}</div>
+                        {message.role === 'assistant' && (
                           <>
-                            <div className="meta-data__item">Tokens: {chatResponse.meta.chunks.length}</div>
-                            <div className="meta-data__item">Antwort Zeit: {chatResponse.meta.responseTime}</div>
+                            <div className="meta-data__item">Tokens: {message.meta.chunks.length}</div>
+                            <div className="meta-data__item">Antwort Zeit: {message.meta.responseTime}</div>
                           </>
                         )}
                       </div>

@@ -9,7 +9,7 @@ interface ICodeBlock {
   language: string;
 }
 
-const process = (code = '') => {
+export const process = (code = '') => {
   let skippedLeadingEmptyLines = false;
   let lastNonEmptyLineIndex = 0;
   let minRawStringIndentation = Number.MAX_SAFE_INTEGER;

@@ -52,9 +52,6 @@ pre {
   margin-top: unset;
   font-family: inherit;
   white-space: pre-wrap;
-  border-radius: var(--border-radius);
-  scrollbar-width: thin;
-  overflow-x: 'auto';
 }
 
 .chat-form {
@@ -186,6 +183,7 @@ pre {
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-gap: 1rem;
+  width: 100%;
 }
 
 .chat-response-list__role {
@@ -198,6 +196,8 @@ pre {
 .chat-response-list__content {
   border-radius: var(--border-radius);
   background-color: var(--color-bg);
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .chat-response-list__response {
