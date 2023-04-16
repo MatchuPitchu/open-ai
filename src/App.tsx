@@ -109,28 +109,36 @@ export const App = () => {
     <>
       <main className="app">
         <form className="chat-form" onSubmit={handleSubmit}>
-          <textarea className="chat-form__input" ref={inputRef} />
+          <textarea className="chat-form__input" ref={inputRef} autoFocus placeholder="Schreibe eine Nachricht ..." />
           <div className="chat-form__buttons">
             <button
               type="submit"
-              className="chat-form__button"
+              className="button"
               disabled={messages.length > 0 && messages[messages.length - 1].meta.loading}
             >
               Submit
             </button>
-            <button type="reset" className="chat-form__reset" onClick={resetMessages}>
+            <button type="reset" className="button" onClick={resetMessages}>
               Reset Context
             </button>
           </div>
 
-          <div className="chat-form__checkbox">
-            <input type="checkbox" id="syntax-highlighting" checked={shouldHighlightSyntax} onChange={switchCheckbox} />
-            <label htmlFor="syntax-highlighting">Add Syntax Highlighting</label>
+          <div className="checkbox">
+            <input
+              className="checkbox__input"
+              type="checkbox"
+              id="syntax-highlighting"
+              checked={shouldHighlightSyntax}
+              onChange={switchCheckbox}
+            />
+            <label className="checkbox__label" htmlFor="syntax-highlighting">
+              Add Syntax Highlighting
+            </label>
           </div>
         </form>
 
         <section className="chat-response-list">
-          {messages.length === 0 && <div>Noch keine Nachricht Chat (Streaming)</div>}
+          {messages.length === 0 && <div>Noch keine Nachricht im Chat (Streaming)</div>}
 
           {messages.length > 0 &&
             messages.map((chatResponse, index) => {

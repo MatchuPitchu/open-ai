@@ -84,13 +84,12 @@ pre {
   gap: 0.5rem;
 }
 
-.button,
-.chat-form__button,
-.chat-form__reset {
+.button {
   font-family: inherit;
   color: inherit;
   width: 100%;
   padding: 0.5rem 1rem;
+  outline: none;
   border: 1px solid #3e3f4b;
   border-radius: var(--border-radius);
   background-color: var(--color-bg);
@@ -98,52 +97,65 @@ pre {
   cursor: pointer;
 }
 
-:is(.button, .chat-form__button, .chat-form__reset):hover {
+.button:hover {
   border-color: var(--color-primary);
 }
 
-:is(.button, .chat-form__button, .chat-form__reset):focus,
-:is(.button, .chat-form__button, .chat-form__reset):focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.button:focus {
+  border: 1px solid var(--color-primary);
 }
 
-.chat-form__reset {
-  grid-area: reset;
+.button--abort {
+  position: fixed;
+  bottom: 0;
+  width: 100vw;
+  border-radius: unset;
+  transform: translateY(100%);
+  transition: transform 0.3s;
 }
 
-.chat-form__checkbox {
+.button--abort.active {
+  transform: translateY(0);
+  box-shadow: var(--box-shadow);
+}
+
+.checkbox {
   flex-basis: 100%;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
-  border-radius: var(--border-radius);
-  background-color: var(--color-bg);
   cursor: pointer;
 }
 
-.chat-form__checkbox input[type='checkbox'] {
-  display: none;
+.checkbox__input {
+  position: absolute;
+  height: 1px;
+  width: 1px;
+  clip-path: path('M 0 0');
 }
 
-.chat-form__checkbox > label {
-  cursor: inherit;
-  width: 100%;
-  padding: 0.5rem;
+.checkbox__label {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-size: 0.8rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background-color: var(--color-bg);
+  cursor: inherit;
 }
 
-.chat-form__checkbox > label::before {
+.checkbox__label::before {
   content: '';
   height: 16px;
   width: 16px;
   border: 1px solid var(--color-text);
 }
 
-.chat-form__checkbox > label::after {
+.checkbox__label::after {
   content: '';
   position: absolute;
   top: 13px;
@@ -155,13 +167,17 @@ pre {
   left: 11px;
 }
 
-.chat-form__checkbox > input[type='checkbox'] + label::after {
+.checkbox__input + .checkbox__label::after {
   opacity: 0;
   transition: opacity 0.3s;
 }
 
-.chat-form__checkbox > input[type='checkbox']:checked + label::after {
+.checkbox__input:checked + .checkbox__label::after {
   opacity: 1;
+}
+
+.checkbox__input:focus + .checkbox__label {
+  border-color: var(--color-primary);
 }
 
 .chat-response-list {
@@ -195,18 +211,4 @@ pre {
 .code-highlight {
   padding: 3px 6px;
   background-color: var(--color-bg-shade);
-}
-
-.button--abort {
-  position: fixed;
-  bottom: 0;
-  width: 100vw;
-  border-radius: unset;
-  transform: translateY(100%);
-  transition: transform 0.3s;
-}
-
-.button--abort.active {
-  transform: translateY(0);
-  box-shadow: var(--box-shadow);
 }

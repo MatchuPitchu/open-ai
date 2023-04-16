@@ -24,7 +24,7 @@ export const ChatCompletion = () => {
       <form className="chat-form" onSubmit={handleSubmit}>
         <textarea className="chat-form__input" ref={inputRef} />
         <div className="chat-form__buttons">
-          <button type="submit" className="chat-form__button">
+          <button type="submit" className="button">
             Submit
           </button>
         </div>
