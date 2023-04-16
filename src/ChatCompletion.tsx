@@ -22,7 +22,7 @@ export const ChatCompletion = () => {
   return (
     <>
       <form className="chat-form" onSubmit={handleSubmit}>
-        <textarea className="chat-form__input" ref={inputRef} />
+        <textarea className="chat-form__textarea" ref={inputRef} />
         <div className="chat-form__buttons">
           <button type="submit" className="button">
             Submit
@@ -30,14 +30,14 @@ export const ChatCompletion = () => {
         </div>
       </form>
 
-      <section className="chat-response-list">
+      <section className="chat-response">
         {chatCourse.length === 0 && <div>Noch keine Nachricht Chat (non Streaming)</div>}
 
         {chatCourse.map((chatResponse, index) => (
           <Fragment key={index}>
-            <div className="chat-response-list__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
-            <div className="chat-response-list__content">
-              <pre className="chat-response-list__response">{chatResponse.content}</pre>
+            <div className="chat-response__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
+            <div className="chat-response__content">
+              <pre className="chat-response__response">{chatResponse.content}</pre>
             </div>
           </Fragment>
         ))}
