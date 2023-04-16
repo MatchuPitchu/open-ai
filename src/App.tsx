@@ -40,9 +40,7 @@ export const App = () => {
 
     if (inputRef.current?.value) {
       inputRef.current.value = `${inputRef.current.value} \n\n${
-        shouldHighlightSyntax
-          ? 'Please use triple backticks for syntax highlighting for each code block in your response.'
-          : ''
+        shouldHighlightSyntax ? 'Use syntax highlighting for the code snippets.' : ''
       }`;
 
       submitStreamingPrompt([{ role: 'user', content: inputRef.current.value }]);
@@ -68,13 +66,15 @@ export const App = () => {
     const blocks = text.split(BACKTICKS_REGEX);
 
     return blocks.map((part, index) => {
-      if (index % 2 === 0) {
-        return part;
+      if (index % 2 === 1) {
+        const language = part.match(LANGUAGE_IN_CODE_BLOCK_REGEX)?.[0];
+        if (language) {
+          const partWithoutLanguage = part.replace(language, '');
+          return createCodeBlock(partWithoutLanguage, language);
+        }
       }
 
-      const language = part.match(LANGUAGE_IN_CODE_BLOCK_REGEX)?.[0];
-      const partWithoutLanguage = part.replace(language ?? '', '');
-      return createCodeBlock(partWithoutLanguage, language);
+      return part;
     });
   };
 
