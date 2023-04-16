@@ -1,0 +1,55 @@
+.clipboard {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  width: 100%;
+  padding: 0 var(--spacing-md);
+  margin-bottom: -0.5em;
+}
+
+.clipboard__language {
+  display: flex;
+  align-items: center;
+  border-radius: var(--border-radius);
+}
+
+.clipboard__button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  margin: unset;
+  padding: unset;
+  border: unset;
+  background-color: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.clipboard__button:hover > svg,
+.clipboard__button:focus > svg {
+  fill: var(--color-text);
+}
+
+.svg-copy {
+  transform: translateY(10px);
+  transition: transform 0.3s;
+}
+.svg-copy.hide {
+  transform: translateY(-150%);
+}
+
+.svg-checkmark {
+  transform: translateY(150%);
+  transition: transform 0.3s;
+}
+
+.svg-checkmark.active {
+  transform: translateY(-10px);
+}
+
+.svg-checkmark > path {
+  fill: var(--color-success);
+}

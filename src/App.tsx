@@ -43,13 +43,13 @@ export const App = () => {
     if (!inputRef.current) return;
 
     const content = shouldHighlightSyntax
-      ? `${inputRef.current.value} Please return the code blocks in your response with backticks and the programming language.`
+      ? `${inputRef.current.value} Return your response with code blocks using triple backticks before and after the block and with the language identifier for syntax highlighting.`
       : inputRef.current.value;
 
     submitStreamingPrompt([{ role: 'user', content }]);
   };
 
-  const createCodeBlock = (block: string, language = 'typescript') => <CodeBlock code={block} language={language} />;
+  const createCodeBlock = (block: string, language = '') => <CodeBlock code={block} language={language} />;
   const createHighlightBlock = (text: string) => <Highlight>{text}</Highlight>;
 
   const addCodeBlock = (codeBlock: RegExpMatchArray, currentText: string) => {
@@ -118,7 +118,7 @@ export const App = () => {
             >
               Submit
             </button>
-            <button type="reset" className="button" onClick={resetMessages}>
+            <button type="reset" className="button" onClick={resetMessages} disabled={isLoading}>
               Reset Context
             </button>
           </div>

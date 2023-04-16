@@ -4,8 +4,10 @@
   font-weight: 400;
 
   --color-primary: #646cff;
+  --color-success: #5a8049;
 
   --color-text: #ececf1;
+
   --color-bg: #343541;
   --color-bg-shade: #21232a;
 
@@ -31,18 +33,14 @@
   margin: 0;
 }
 
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
 .app {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 2rem;
+  max-width: 1280px;
   min-width: 320px;
-  min-height: 100vh;
+  padding: 2rem;
+  margin: 0 auto;
 }
 
 h1 {
@@ -54,6 +52,9 @@ pre {
   margin-top: unset;
   font-family: inherit;
   white-space: pre-wrap;
+  border-radius: var(--border-radius);
+  scrollbar-width: thin;
+  overflow-x: 'auto';
 }
 
 .chat-form {
@@ -107,6 +108,7 @@ pre {
 
 .button--abort {
   position: fixed;
+  left: 0;
   bottom: 0;
   width: 100vw;
   border-radius: unset;

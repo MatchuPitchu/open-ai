@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Clipboard } from './Clipboard';
 import classes from './CodeBlock.module.css';
 
 interface ICodeBlock {
@@ -69,6 +70,7 @@ export const CodeBlock = ({ code, language }: ICodeBlock) => {
 
   return isReloaded ? (
     <pre className={classes.pre}>
+      <Clipboard language={language} text={processedCode} />
       <SyntaxHighlighter language={language} style={vscDarkPlus}>
         {processedCode}
       </SyntaxHighlighter>

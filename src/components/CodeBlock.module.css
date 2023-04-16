@@ -1,5 +1,3 @@
 .pre {
-  border-radius: var(--border-radius);
-  scrollbar-width: thin;
-  overflow-x: 'auto';
+  background-color: var(--color-bg-shade);
 }
