@@ -5,7 +5,6 @@
 
   --color-primary: #646cff;
   --color-success: #5a8049;
-
   --color-text: #ececf1;
 
   --color-bg: #343541;
@@ -17,6 +16,8 @@
   --border-radius: 4px;
   --box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14),
     0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+
+  --response-after-height: 140px; /* is set dynamically in React component */
 
   color-scheme: light dark;
   color: var(--color-text);
@@ -57,44 +58,48 @@ pre {
   white-space: pre-wrap;
 }
 
-.chat-response {
+.response {
   display: grid;
   grid-template-columns: max-content 1fr;
   grid-gap: 1rem;
   width: 100%;
 }
 
-.chat-response::after {
+.response::after {
   content: '';
-  /* to allow scroll to bottom for chat-response section */
-  height: 140px;
+  height: var(--response-after-height); /* to allow scroll to bottom for response section */
 }
 
-.chat-response__role {
+.response__role {
   font-size: 0.8rem;
   padding: var(--spacing-md);
   background-color: var(--color-bg);
   border-radius: var(--border-radius);
 }
 
-.chat-response__content {
+.response__sticky {
+  position: sticky;
+  top: 10px;
+}
+
+.response__content-box {
   border-radius: var(--border-radius);
   background-color: var(--color-bg);
   max-width: 100%;
   overflow: hidden;
 }
 
-.chat-response__response {
+.response__text {
   padding: var(--spacing-md);
 }
 
-.meta-data {
+.response__meta-data {
   font-size: 0.8rem;
   padding: var(--spacing-md);
   background-color: var(--color-bg-shade);
 }
 
-.chat-form {
+.form {
   display: flex;
   flex-flow: row wrap;
   gap: 0.5rem;
@@ -111,7 +116,7 @@ pre {
   background: var(--color-bg-body);
 }
 
-.chat-form__textarea {
+.form__textarea {
   flex: 1;
   font-family: inherit;
   color: var(----color-text);
@@ -125,11 +130,11 @@ pre {
   overflow: auto;
 }
 
-.chat-form__textarea:focus {
+.form__textarea:focus {
   border: 1px solid var(--color-primary);
 }
 
-.chat-form__buttons {
+.form__buttons {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;

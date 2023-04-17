@@ -1,7 +1,6 @@
-import { Fragment, useEffect, useReducer, useRef } from 'react';
-import { CodeBlock } from './components/CodeBlock';
-import { Highlight } from './components/Highlight';
+import { Fragment, useReducer, useRef } from 'react';
 import { useChatStream } from './hooks/useChatStream';
+import { formatDate, getFormattedText, setCSSVariable } from './utils/utils';
 import type { FormEvent } from 'react';
 import './App.css';
 
@@ -11,22 +10,11 @@ import './App.css';
 // TODO: add model select button mit Hinweis und Link Pricing OpenAI: gpt-4 is more expensive
 // TODO: model 3.5 für tests nutzen, da günstiger: https://openai.com/pricing
 
-const formatDate = (date: Date) =>
-  date.toLocaleString('de-DE', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric'
-  });
-
-const BACKTICKS_REGEX = /`{3}/;
-const SINGLE_BACKTICKS_REGEX = /`(?!`+)/;
-const LANGUAGE_IN_CODE_BLOCK_REGEX = /^\w+(?=\n)/;
+const SYNTAX_HIGHLIGHTING_PROMPT = '\n\nUse triple backticks for syntax highlighting for the code snippets';
 
 export const App = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [shouldHighlightSyntax, toggleHighlightSyntax] = useReducer((prev) => !prev, false);
 
   // V2 Response Streaming with Context Memory
@@ -35,73 +23,40 @@ export const App = () => {
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
   });
 
-  console.log('M', messages);
+  const handleResizeInput = () => {
+    if (!inputRef.current || !formRef.current) return;
+    inputRef.current.style.height = `auto`;
+
+    inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+
+    setCSSVariable('--response-after-height', `${formRef.current.offsetHeight}px`);
+  };
+
+  const updateInputField = (prompt: string) => {
+    if (!inputRef.current) return;
+    inputRef.current.value = prompt;
+    handleResizeInput();
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!inputRef.current) return;
 
-    inputRef.current.value = `${inputRef.current.value} \n\n${
-      shouldHighlightSyntax ? 'Use syntax highlighting for the code snippets' : ''
-    }`;
+    const input = inputRef.current.value.trimEnd();
+    const syntaxHighlightingText =
+      shouldHighlightSyntax && input.includes(SYNTAX_HIGHLIGHTING_PROMPT) ? '' : SYNTAX_HIGHLIGHTING_PROMPT;
+    const prompt = `${input} ${syntaxHighlightingText}`;
 
-    submitStreamingPrompt([{ role: 'user', content: inputRef.current.value }]);
-  };
+    submitStreamingPrompt([{ role: 'user', content: prompt }]);
 
-  const createCodeBlock = (block: string, language = '') => <CodeBlock code={block} language={language} />;
-  const createHighlightBlock = (text: string) => <Highlight>{text}</Highlight>;
-
-  const addHighlighting = (textBlocks: (string | JSX.Element)[]) => {
-    return textBlocks.flatMap((part) => {
-      if (typeof part !== 'string') return part;
-
-      const formattedParts = part.split(SINGLE_BACKTICKS_REGEX).map((subPart, index) => {
-        return index % 2 === 0 ? subPart : createHighlightBlock(subPart);
-      });
-
-      return formattedParts;
-    });
-  };
-
-  const addCodeBlocks = (text: string) => {
-    const blocks = text.split(BACKTICKS_REGEX);
-
-    return blocks.map((part, index) => {
-      if (index % 2 === 1) {
-        const language = part.match(LANGUAGE_IN_CODE_BLOCK_REGEX)?.[0];
-        if (language) {
-          const partWithoutLanguage = part.replace(language, '');
-          return createCodeBlock(partWithoutLanguage, language);
-        }
-      }
-
-      return part;
-    });
-  };
-
-  const getFormattedText = (text: string) => {
-    let formattedText = addCodeBlocks(text);
-
-    if (SINGLE_BACKTICKS_REGEX.test(text)) {
-      formattedText = addHighlighting(formattedText);
-    }
-
-    return formattedText;
-  };
-
-  const handleResizeInput = (event: FormEvent<HTMLTextAreaElement>) => {
-    if (!inputRef.current) return;
-    console.log(inputRef.current.scrollHeight);
-
-    inputRef.current.style.height = `auto`;
-    inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    updateInputField(prompt);
   };
 
   return (
     <>
       <main className="app">
-        <section className="chat-response">
+        <section className="response">
           {messages.length === 0 && <div>Noch keine Nachricht im Chat (Streaming)</div>}
 
           {messages.length > 0 &&
@@ -110,15 +65,17 @@ export const App = () => {
 
               return (
                 <Fragment key={index}>
-                  <div className="chat-response__role">{message.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
-                  <div className="chat-response__content">
-                    <pre className="chat-response__response">
+                  <div className="response__role">
+                    <span className="response__sticky">{message.role === 'assistant' ? 'ChatGPT' : 'User'}</span>
+                  </div>
+                  <div className="response__content-box">
+                    <pre className="response__text">
                       {formattedText.map((content, index) => (
                         <Fragment key={index}>{content}</Fragment>
                       ))}
                     </pre>
                     {!message.meta.loading && (
-                      <div className="meta-data">
+                      <div className="response__meta-data">
                         <div>Zeit: {formatDate(new Date(message.timestamp))}</div>
                         {message.role === 'assistant' && (
                           <>
@@ -134,16 +91,16 @@ export const App = () => {
             })}
         </section>
       </main>
-      <form className="chat-form" onSubmit={handleSubmit}>
+      <form className="form" ref={formRef} onSubmit={handleSubmit}>
         <textarea
-          className="chat-form__textarea"
+          className="form__textarea"
           ref={inputRef}
           placeholder="Schreibe eine Nachricht ..."
           autoFocus
           spellCheck={false}
           onInput={handleResizeInput}
         />
-        <div className="chat-form__buttons">
+        <div className="form__buttons">
           <button
             type="submit"
             className="button"
