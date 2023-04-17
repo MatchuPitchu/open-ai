@@ -11,9 +11,11 @@ type DeepRequired<T> = T extends object
 export type GPT35 = 'gpt-3.5-turbo' | 'gpt-3.5-turbo-0301';
 export type GPT4 = 'gpt-4' | 'gpt-4-0314' | 'gpt-4-32k' | 'gpt-4-32k-0314';
 
+export type ChatRole = 'user' | 'assistant' | 'system' | '';
+
 export type ChatCompletionResponseMessage = {
   content: string; // content of the completion
-  role: string; // role of the person/AI in the message
+  role: ChatRole; // role of the person/AI in the message
 };
 
 type ChatCompletionIncomingChunk = Partial<ChatCompletionResponseMessage>;
@@ -97,7 +99,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       setMessages((prev) => {
         const lastMessageChunkAdded = {
           content: `${prev[prev.length - 1].content}${chunk?.content ?? ''}`,
-          role: `${prev[prev.length - 1].role}${chunk?.role ?? ''}`,
+          role: `${prev[prev.length - 1].role}${chunk?.role ?? ''}` as ChatRole,
           timestamp: 0,
           meta: {
             ...prev[prev.length - 1].meta,
@@ -144,8 +146,8 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
         };
 
         const updatedMessages = prev.slice(0, -1);
-
         updatedMessages.push(lastMessageChunkAdded);
+
         return updatedMessages;
       });
     }
