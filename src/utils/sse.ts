@@ -15,7 +15,7 @@ enum SSEState {
 export type RequestOptions = {
   headers: Record<string, string>;
   method: 'POST' | 'GET';
-  payload?: string;
+  body?: string;
   withCredentials: boolean;
 };
 
@@ -217,7 +217,7 @@ export class SSE {
       this.xhr.setRequestHeader(key, this.options.headers[key]);
     }
     this.xhr.withCredentials = this.options.withCredentials;
-    this.xhr.send(this.options.payload);
+    this.xhr.send(this.options.body);
   }
 
   close() {

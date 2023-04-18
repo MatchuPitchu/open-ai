@@ -4,7 +4,7 @@ import { setCSSVariable } from '@/utils/utils';
 import type { FormEvent } from 'react';
 
 interface IChatForm {
-  onSubmit: (newMessages: ChatMessageParams[]) => void;
+  onSubmit: (newPrompt: ChatMessageParams[]) => void;
   onReset: () => void;
   isLoading: boolean;
 }

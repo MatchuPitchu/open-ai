@@ -1,3 +1,5 @@
+// * NOT WORKING: ONLY A FIRST TRY
+// TODO: umschreiben ohne Hooks (aktuell kann der custom hook nicht eingesetzt werden, weil bei jedem Re-rendering der Hook neu durchlaufen wird)
 import { useCallback, useEffect, useState } from 'react';
 
 enum SSEState {
@@ -33,7 +35,6 @@ type EventListenerTyp = 'message' | 'readystatechange' | 'load' | 'progress' | '
 
 const FIELD_SEPARATOR = ':';
 
-// TODO: umschreiben ohne Hooks (aktuell kann der custom hook nicht eingesetzt werden, weil bei jedem Re-rendering der Hook neu durchlaufen wird)
 export const useSSE = (url: string) => {
   const [readyState, setReadyState] = useState(SSEState.INITIALIZING);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(new XMLHttpRequest());
