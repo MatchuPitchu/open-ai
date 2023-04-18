@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { SSE } from 'sse.js';
-import type { SSEEvent } from 'sse.js';
+import { SSE } from '@/utils/sse';
+import type { ReadyStateEventData, MessageEventData, RequestOptions } from '@/utils/sse';
 
 type DeepRequired<T> = T extends object
   ? {
@@ -75,9 +75,9 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   }, [source]);
 
   const handleChunkResponse = useCallback(
-    (event: SSEEvent) => {
+    (event: CustomEvent<MessageEventData>) => {
       // if [DONE] token is found, stream was finished
-      if (event?.data === '[DONE]') {
+      if (event.detail.data === '[DONE]') {
         closeStream();
       }
 
@@ -85,7 +85,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       let payload;
 
       try {
-        payload = JSON.parse(event?.data ?? '{}');
+        payload = JSON.parse(event.detail.data ?? '{}');
       } catch (error) {
         payload = undefined;
       }
@@ -124,15 +124,15 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
     [closeStream]
   );
 
-  const handleConnectionClosed = (event: SSEEvent, beforeTimestamp: number) => {
+  const handleConnectionClosed = (event: CustomEvent<ReadyStateEventData>, beforeTimestamp: number) => {
     // readyState: 0 - connecting, 1 - open, 2 - closed
-    if (event.readyState && event.readyState > 1) {
+    if (event.detail.readyState && event.detail.readyState > 1) {
       // Determine the final timestamp, and calculate the number of seconds the full request took.
       const afterTimestamp = Date.now();
       const differenceInSeconds = (afterTimestamp - beforeTimestamp) / 1000;
       const formattedDiff = `${differenceInSeconds.toFixed(2)} Sekunden`;
 
-      // Update the messages list, specifically update the last message entry with the final
+      // update the messages list, specifically update the last message entry with the final
       // details of the full request/response.
       setMessages((prev) => {
         const lastMessageChunkAdded = {
@@ -178,7 +178,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
 
       setMessages(updatedMessages);
 
-      const requestOptions = {
+      const requestOptions: RequestOptions = {
         // define request headers
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -194,8 +194,9 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
             .filter((_, index) => updatedMessages.length - 1 !== index)
             .map(officialOpenAIParams),
           stream: true
-        })
-      } as const;
+        }),
+        withCredentials: false
+      };
 
       // create SSE request to the OpenAI chat completion API endpoint
       const source = new SSE(CHAT_COMPLETIONS_URL, requestOptions);
@@ -204,7 +205,9 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       source.addEventListener('message', handleChunkResponse);
 
       // listen for connection closed event
-      source.addEventListener('readystatechange', (event) => handleConnectionClosed(event, beforeTimestamp));
+      source.addEventListener('readystatechange', (event: CustomEvent<ReadyStateEventData>) =>
+        handleConnectionClosed(event, beforeTimestamp)
+      );
 
       source.stream();
 

@@ -1,6 +1,6 @@
 {
-  "name": "15_chat-gpt",
-  "version": "0.0.0",
+  "name": "openai-api-client",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,8 +17,7 @@
     "openai": "^3.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-syntax-highlighter": "^15.5.0",
-    "sse.js": "^0.6.1"
+    "react-syntax-highlighter": "^15.5.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
