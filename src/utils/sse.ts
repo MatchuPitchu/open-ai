@@ -93,7 +93,7 @@ export class SSE {
     return true;
   }
 
-  private _setReadyState(state: number) {
+  private _setReadyState(state: SSEState) {
     const event = new CustomEvent('readystatechange', { detail: { readyState: state } });
     this.readyState = state;
     this.dispatchEvent(event);
