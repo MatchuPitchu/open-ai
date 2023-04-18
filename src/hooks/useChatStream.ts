@@ -131,7 +131,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
     [closeStream]
   );
 
-  const handleConnectionClosed = (startTimestamp: number) => {
+  const handleCloseStream = (startTimestamp: number) => {
     // Determine the final timestamp, and calculate the number of seconds the full request took.
     const endTimestamp = Date.now();
     const differenceInSeconds = (endTimestamp - startTimestamp) / MILLISECONDS_PER_SECOND;
@@ -192,7 +192,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
         // readyState: 0 - connecting, 1 - open, 2 - closed
         const readyState = event.detail.readyState;
         if (readyState !== 2) return;
-        handleConnectionClosed(startTimestamp);
+        handleCloseStream(startTimestamp);
       });
 
       source.stream();
