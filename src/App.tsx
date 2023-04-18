@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { ChatContent } from './components/ChatContent';
 import { ChatForm } from './components/ChatForm';
 import { ChatMetaData } from './components/ChatMetaData';
+import { ChatResponseLayout } from './components/ChatResponseLayout';
 import { Role } from './components/Role';
 import { useChatStream } from './hooks/useChatStream';
 import { getFormattedText } from './utils/utils';
@@ -22,31 +23,24 @@ export const App = () => {
   return (
     <>
       <main className="app">
-        <section className="response">
-          {messages.length === 0 && <div>Noch keine Nachricht im Chat (Streaming)</div>}
-
+        <ChatResponseLayout isEmpty={messages.length === 0}>
           {messages.length > 0 &&
-            messages.map(({ role, content, meta, timestamp }, index) => {
-              const formattedText = getFormattedText(content);
-
-              return (
-                <Fragment key={index}>
-                  <Role role={role} />
-                  <div className="response__content-box">
-                    <ChatContent text={formattedText} />
-                    {!meta.loading && (
-                      <ChatMetaData
-                        timestamp={timestamp}
-                        role={role}
-                        tokens={meta.chunks.length}
-                        responseTime={meta.responseTime}
-                      />
-                    )}
-                  </div>
-                </Fragment>
-              );
-            })}
-        </section>
+            messages.map(({ role, content, meta, timestamp }, index) => (
+              <Fragment key={index}>
+                <Role role={role} />
+                <ChatContent text={getFormattedText(content)}>
+                  {!meta.loading && (
+                    <ChatMetaData
+                      timestamp={timestamp}
+                      role={role}
+                      tokens={meta.chunks.length}
+                      responseTime={meta.responseTime}
+                    />
+                  )}
+                </ChatContent>
+              </Fragment>
+            ))}
+        </ChatResponseLayout>
       </main>
 
       <ChatForm onSubmit={submitPrompt} onReset={resetMessages} isLoading={isLoading} />

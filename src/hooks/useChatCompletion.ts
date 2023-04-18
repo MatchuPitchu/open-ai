@@ -4,7 +4,7 @@ import type { OpenAIStreamingProps } from './useChatStream';
 import type { ChatCompletionResponseMessage, ChatCompletionRequestMessage } from 'openai';
 
 export const useChatCompletion = ({ model, apiKey }: OpenAIStreamingProps) => {
-  const [isWorking, setIsWorking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [chatCourse, setChatCourse] = useState<ChatCompletionResponseMessage[]>([]);
 
   const openai = useMemo(() => {
@@ -17,23 +17,21 @@ export const useChatCompletion = ({ model, apiKey }: OpenAIStreamingProps) => {
 
   const submitCompletionPrompt = async (messages: ChatCompletionRequestMessage[]) => {
     try {
-      setIsWorking(true);
+      setIsLoading(true);
       const completion = await openai.createChatCompletion({
         model,
         messages
       });
 
       const response = completion.data.choices[0].message;
+      if (!response) return;
 
-      setChatCourse((prev) => {
-        if (!response) return prev;
-        return [...prev, response];
-      });
+      setChatCourse((prev) => [...prev, response]);
     } catch (error) {
       console.error('Fehler beim Abfragen von OpenAI', error);
     }
-    setIsWorking(false);
+    setIsLoading(false);
   };
 
-  return { chatCourse, submitCompletionPrompt, isWorking };
+  return { chatCourse, submitCompletionPrompt, isLoading };
 };

@@ -1,18 +1,21 @@
 import { Fragment, useRef } from 'react';
-import { useChatCompletion } from './hooks/useChatCompletion';
+import { useChatCompletion } from '../hooks/useChatCompletion';
+import { ChatContent } from './ChatContent';
+import { ChatResponseLayout } from './ChatResponseLayout';
+import { Role } from './Role';
 
 export const ChatCompletion = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // V1 Single Response without Context Memory
-  const { chatCourse, submitCompletionPrompt, isWorking } = useChatCompletion({
+  const { chatCourse, submitCompletionPrompt, isLoading } = useChatCompletion({
     model: 'gpt-3.5-turbo',
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
   });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isWorking) return;
+    if (isLoading) return;
 
     if (!inputRef.current) return;
 
@@ -30,18 +33,15 @@ export const ChatCompletion = () => {
         </div>
       </form>
 
-      <section className="response">
-        {chatCourse.length === 0 && <div>Noch keine Nachricht Chat (non Streaming)</div>}
-
-        {chatCourse.map((chatResponse, index) => (
-          <Fragment key={index}>
-            <div className="response__role">{chatResponse.role === 'assistant' ? 'ChatGPT' : 'User'}</div>
-            <div className="response__content-box">
-              <pre className="response__text">{chatResponse.content}</pre>
-            </div>
-          </Fragment>
-        ))}
-      </section>
+      <ChatResponseLayout isEmpty={chatCourse.length === 0}>
+        {chatCourse.length > 0 &&
+          chatCourse.map(({ role, content }, index) => (
+            <Fragment key={index}>
+              <Role role={role} />
+              <ChatContent text={[content]} />
+            </Fragment>
+          ))}
+      </ChatResponseLayout>
     </>
   );
 };
