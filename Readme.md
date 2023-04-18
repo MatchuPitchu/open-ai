@@ -24,6 +24,10 @@ This project is a chat interface that uses the OpenAI API to generate responses 
 - reset the messages context
 - displays additional meta data for each response
 
+## Pricing OpenAI API
+
+> <https://openai.com/pricing>
+
 ## Contributing
 
 Contributions to this project are welcome. Please open an issue or pull request if you find a bug or have a feature request.
