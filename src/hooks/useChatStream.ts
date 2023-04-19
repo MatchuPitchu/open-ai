@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { SSE } from '@/utils/sse';
-import type { ReadyStateEventData, MessageEventData, RequestOptions } from '@/utils/sse';
+import type { MessageEventData, RequestOptions } from '@/utils/sse';
 
 type DeepRequired<T> = T extends object
   ? {
@@ -163,7 +163,6 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       if (lastMessage?.meta?.loading || !newPrompt[0].content) return;
 
       setIsLoading(true);
-
       const startTimestamp = Date.now();
 
       // placeholder for next message that will be returned from API
@@ -188,11 +187,11 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       const source = new SSE(CHAT_COMPLETIONS_URL, requestOptions);
 
       source.addEventListener('message', handleChunk);
-      source.addEventListener('readystatechange', (event: CustomEvent<ReadyStateEventData>) => {
+      source.addEventListener('readystatechange', () => {
         // readyState: 0 - connecting, 1 - open, 2 - closed
-        const readyState = event.detail.readyState;
-        if (readyState !== 2) return;
-        handleCloseStream(startTimestamp);
+        if (source.readyState === 2) {
+          handleCloseStream(startTimestamp);
+        }
       });
 
       source.stream();

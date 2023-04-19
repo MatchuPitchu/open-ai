@@ -19,35 +19,34 @@ export type RequestOptions = {
   withCredentials: boolean;
 };
 
-export type ReadyStateEventData = Record<'readyState', SSEState>;
 export type MessageEventData = Record<'data' | 'id', string>;
 type ErrorEventData = Record<'data', string>;
 
-type ReadyStateEventHandlerType = (event: CustomEvent<ReadyStateEventData>) => void;
 type MessageEventHandlerType = (event: CustomEvent<MessageEventData>) => void;
 type ErrorEventHandlerType = (event: CustomEvent<ErrorEventData>) => void;
 type UnknownEventHandlerType = (event: CustomEvent<unknown>) => void;
 
-type EventHandlerType =
-  | ReadyStateEventHandlerType
-  | MessageEventHandlerType
-  | ErrorEventHandlerType
-  | UnknownEventHandlerType;
+type EventHandlerType = MessageEventHandlerType | ErrorEventHandlerType | UnknownEventHandlerType;
 
 type EventListenerTyp = 'message' | 'readystatechange' | 'load' | 'progress' | 'abort' | 'error';
 
 const FIELD_SEPARATOR = ':';
 
 export class SSE {
-  xhr: XMLHttpRequest | null;
-  readyState: number;
+  // xhr: XMLHttpRequest | null;
+  // readyState: number;
   progress: number;
   chunk: string;
   listeners: Record<EventListenerTyp, EventHandlerType[]>;
 
-  constructor(public url: string, public options: RequestOptions) {
-    this.xhr = null;
-    this.readyState = SSEState.INITIALIZING;
+  constructor(
+    private url: string,
+    private options: RequestOptions,
+    private xhr: XMLHttpRequest | null = null,
+    public readyState: number = SSEState.INITIALIZING
+  ) {
+    // this.xhr = null;
+    // this.readyState = SSEState.INITIALIZING;
     this.progress = 0;
     this.chunk = '';
     this.listeners = {
@@ -94,7 +93,7 @@ export class SSE {
   }
 
   private _setReadyState(state: SSEState) {
-    const event = new CustomEvent('readystatechange', { detail: { readyState: state } });
+    const event = new CustomEvent('readystatechange');
     this.readyState = state;
     this.dispatchEvent(event);
   }
