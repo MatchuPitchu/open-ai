@@ -19,77 +19,55 @@ export type RequestOptions = {
   withCredentials: boolean;
 };
 
-export type MessageEventData = Record<'data' | 'id', string>;
-type ErrorEventData = Record<'data', string>;
+export type MessageEventData = Record<'data', string>;
 
-type MessageEventHandlerType = (event: CustomEvent<MessageEventData>) => void;
-type ErrorEventHandlerType = (event: CustomEvent<ErrorEventData>) => void;
-type UnknownEventHandlerType = (event: CustomEvent<unknown>) => void;
+type EventHandler = <T>(event: CustomEvent<T>) => void;
+type EventListener = 'message' | 'readystatechange' | 'load' | 'progress' | 'abort' | 'error';
+type EventListenersObject = Record<EventListener, (<T>(event: CustomEvent<T>) => void)[]>;
 
-type EventHandlerType = MessageEventHandlerType | ErrorEventHandlerType | UnknownEventHandlerType;
+export const isMessageEventData = (event: CustomEvent): event is CustomEvent<MessageEventData> => {
+  return 'data' in event.detail;
+};
 
-type EventListenerTyp = 'message' | 'readystatechange' | 'load' | 'progress' | 'abort' | 'error';
-
-const FIELD_SEPARATOR = ':';
+const getInitialListeners = () => ({
+  message: [],
+  readystatechange: [],
+  load: [],
+  progress: [],
+  abort: [],
+  error: []
+});
 
 export class SSE {
-  // xhr: XMLHttpRequest | null;
-  // readyState: number;
-  progress: number;
-  chunk: string;
-  listeners: Record<EventListenerTyp, EventHandlerType[]>;
-
   constructor(
     private url: string,
     private options: RequestOptions,
     private xhr: XMLHttpRequest | null = null,
-    public readyState: number = SSEState.INITIALIZING
-  ) {
-    // this.xhr = null;
-    // this.readyState = SSEState.INITIALIZING;
-    this.progress = 0;
-    this.chunk = '';
-    this.listeners = {
-      message: [],
-      readystatechange: [],
-      load: [],
-      progress: [],
-      abort: [],
-      error: []
-    };
-  }
+    public readyState: number = SSEState.INITIALIZING,
+    public progress: number = 0,
+    private chunk: string = '',
+    private listeners: EventListenersObject = getInitialListeners()
+  ) {}
 
-  addEventListener(type: EventListenerTyp, listener: EventHandlerType) {
-    if (!this.listeners[type].includes(listener)) {
-      this.listeners[type].push(listener);
+  addEventListener(type: EventListener, eventHandler: EventHandler) {
+    if (!this.listeners[type].includes(eventHandler)) {
+      this.listeners[type].push(eventHandler);
     }
   }
 
-  removeEventListener(type: EventListenerTyp, listener: EventHandlerType) {
-    const listeners = this.listeners[type];
-    if (!listeners) return;
-
-    const retainedListeners = listeners.filter((element) => element !== listener);
-    if (retainedListeners.length === 0) {
-      delete this.listeners[type];
-    } else {
-      this.listeners[type] = retainedListeners;
-    }
+  removeEventListener(type: EventListener, eventHandler: EventHandler) {
+    const eventHandlers = this.listeners[type];
+    const retainedEventHandlers = eventHandlers.filter((element) => element !== eventHandler);
+    this.listeners[type] = retainedEventHandlers;
   }
 
-  // TODO: solve type problem
-  dispatchEvent(event: CustomEvent<any>): boolean {
-    if (!event) return true;
+  dispatchEvent<T>(event: CustomEvent<T>) {
+    const eventHandlers = this.listeners[event.type as EventListener];
+    if (!eventHandlers || eventHandlers.length === 0) return;
 
-    const listeners = this.listeners[event.type as EventListenerTyp];
-    if (listeners && listeners.length > 0) {
-      return listeners.every((callback) => {
-        callback(event);
-        return !event.defaultPrevented;
-      });
+    for (const eventHandler of eventHandlers) {
+      eventHandler(event);
     }
-
-    return true;
   }
 
   private _setReadyState(state: SSEState) {
@@ -158,38 +136,20 @@ export class SSE {
     this.chunk = '';
   }
 
-  /**
-   * Parse a received SSE event chunk into a constructed event object.
-   */
+  // parse a received SSE event chunk into a constructed event object
   private _parseEventChunk(chunk: string): CustomEvent<MessageEventData> | null {
     if (!chunk || chunk.length === 0) return null;
 
-    const event = { id: '', retry: '', data: '', event: 'message' } satisfies Record<
-      'id' | 'retry' | 'data' | 'event',
-      string
-    >;
+    const event = { type: 'message', data: '' } satisfies { type: 'message'; data: string };
     chunk.split(/\r\n|\r|\n/).forEach((line) => {
       line = line.trimEnd();
-      const index = line.indexOf(FIELD_SEPARATOR);
-      if (index <= 0) {
-        // Line was either empty, or started with a separator and is a comment.
-        // Either way, ignore.
-        return;
-      }
-
-      const field = line.substring(0, index) as keyof typeof event;
-      if (!(field in event)) return;
-
-      const value = line.substring(index + 1).trimStart();
-      if (field === 'data') {
-        event[field] += value;
-      } else {
-        event[field] = value;
+      if (line.startsWith('data:')) {
+        const newData = line.replaceAll(/(\n)?^data:\s*/g, '');
+        event.data += newData;
       }
     });
 
-    const customEvent = new CustomEvent(event.event, { detail: { data: event.data, id: event.id } });
-    return customEvent;
+    return new CustomEvent(event.type, { detail: { data: event.data } });
   }
 
   private _checkStreamClosed() {

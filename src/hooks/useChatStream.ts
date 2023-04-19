@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { SSE } from '@/utils/sse';
+import { SSE, isMessageEventData } from '@/utils/sse';
 import type { MessageEventData, RequestOptions } from '@/utils/sse';
 
 type DeepRequired<T> = T extends object
@@ -87,7 +87,9 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   }, [source]);
 
   const handleChunk = useCallback(
-    (event: CustomEvent<MessageEventData>) => {
+    (event: CustomEvent) => {
+      if (!isMessageEventData(event)) return;
+
       // if [DONE] token is found, stream was finished
       if (event.detail.data === '[DONE]') {
         closeStream();
@@ -109,16 +111,16 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       setMessages((prevMessages) => {
         const lastMessageIndex = prevMessages.length - 1;
         const updatedLastMessage = {
-          content: `${prevMessages[lastMessageIndex].content}${chunk?.content ?? ''}`,
-          role: `${prevMessages[lastMessageIndex].role}${chunk?.role ?? ''}` as ChatRole,
+          content: `${prevMessages[lastMessageIndex].content}${chunk.content ?? ''}`,
+          role: `${prevMessages[lastMessageIndex].role}${chunk.role ?? ''}` as ChatRole,
           timestamp: 0,
           meta: {
             ...prevMessages[lastMessageIndex].meta,
             chunks: [
               ...prevMessages[lastMessageIndex].meta.chunks,
               {
-                content: chunk?.content ?? '',
-                role: chunk?.role ?? '',
+                content: chunk.content ?? '',
+                role: chunk.role ?? '',
                 timestamp: Date.now()
               }
             ]
