@@ -14,8 +14,6 @@ export type ChatCompletionResponseMessage = {
   role: ChatRole; // role of the person/AI in the message
 };
 
-type ChatCompletionIncomingChunk = Partial<ChatCompletionResponseMessage>;
-
 export type ChatMessageToken = ChatCompletionResponseMessage & {
   timestamp: number;
 };
@@ -31,16 +29,13 @@ export type ChatMessageParams = ChatCompletionResponseMessage & {
 
 export type ChatMessage = DeepRequired<ChatMessageParams>;
 
-type ChatCompletionChunk = {
+export type ChatCompletionChunk = {
   id: string;
   object: string;
   created: number;
   model: Model;
   choices: {
-    delta: {
-      content?: string;
-      role?: ChatRole;
-    };
+    delta: Partial<ChatCompletionResponseMessage>;
     index: number;
     finish_reason: string | null;
   }[];
