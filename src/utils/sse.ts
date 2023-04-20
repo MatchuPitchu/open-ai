@@ -5,7 +5,7 @@
 // - Updated CustomEvent usage for better compatibility with TypeScript.
 // - Made use of some modern TypeScript features such as optional chaining and nullish coalescing.
 
-enum SSEState {
+export enum SourceState {
   INITIALIZING = -1,
   CONNECTING = 0,
   OPEN = 1,
@@ -43,7 +43,7 @@ export class SSE {
     private url: string,
     private options: RequestOptions,
     private xhr: XMLHttpRequest | null = null,
-    public readyState: number = SSEState.INITIALIZING,
+    public readyState: SourceState = SourceState.INITIALIZING,
     public progress: number = 0,
     private chunk: string = '',
     private listeners: EventListenersObject = getInitialListeners()
@@ -70,7 +70,7 @@ export class SSE {
     }
   }
 
-  private _setReadyState(state: SSEState) {
+  private _setReadyState(state: SourceState) {
     const event = new CustomEvent('readystatechange');
     this.readyState = state;
     this.dispatchEvent(event);
@@ -100,10 +100,10 @@ export class SSE {
       return;
     }
 
-    if (this.readyState === SSEState.CONNECTING) {
+    if (this.readyState === SourceState.CONNECTING) {
       const event = new CustomEvent('open');
       this.dispatchEvent(event);
-      this._setReadyState(SSEState.OPEN);
+      this._setReadyState(SourceState.OPEN);
     }
 
     const data = this.xhr.responseText.substring(this.progress);
@@ -156,12 +156,12 @@ export class SSE {
     if (!this.xhr) return;
 
     if (this.xhr.readyState === XMLHttpRequest.DONE) {
-      this._setReadyState(SSEState.CLOSED);
+      this._setReadyState(SourceState.CLOSED);
     }
   }
 
   stream() {
-    this._setReadyState(SSEState.CONNECTING);
+    this._setReadyState(SourceState.CONNECTING);
 
     this.xhr = new XMLHttpRequest();
     // using => syntax avoids the need to bind the this context manually with bind().
@@ -180,11 +180,11 @@ export class SSE {
   }
 
   close() {
-    if (this.readyState === SSEState.CLOSED) return;
+    if (this.readyState === SourceState.CLOSED) return;
 
     this.xhr?.abort();
     this.xhr = null;
 
-    this._setReadyState(SSEState.CLOSED);
+    this._setReadyState(SourceState.CLOSED);
   }
 }

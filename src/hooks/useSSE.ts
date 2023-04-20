@@ -1,23 +1,17 @@
 // * NOT WORKING: ONLY A FIRST TRY
 // TODO: umschreiben ohne Hooks (aktuell kann der custom hook nicht eingesetzt werden, weil bei jedem Re-rendering der Hook neu durchlaufen wird)
 import { useCallback, useEffect, useState } from 'react';
+import { SourceState } from '@/utils/sse';
 
-enum SSEState {
-  INITIALIZING = -1,
-  CONNECTING = 0,
-  OPEN = 1,
-  CLOSED = 2
-}
-
-export type RequestOptions = {
+type RequestOptions = {
   headers: Record<string, string>;
   method: 'POST' | 'GET';
   payload?: string;
   withCredentials: boolean;
 };
 
-export type ReadyStateEventData = Record<'readyState', SSEState>;
-export type MessageEventData = Record<'data' | 'id', string>;
+type ReadyStateEventData = Record<'readyState', SourceState>;
+type MessageEventData = Record<'data' | 'id', string>;
 type ErrorEventData = Record<'data', string>;
 
 type ReadyStateEventHandlerType = (event: CustomEvent<ReadyStateEventData>) => void;
@@ -36,7 +30,7 @@ type EventListenerTyp = 'message' | 'readystatechange' | 'load' | 'progress' | '
 const FIELD_SEPARATOR = ':';
 
 export const useSSE = (url: string) => {
-  const [readyState, setReadyState] = useState(SSEState.INITIALIZING);
+  const [readyState, setReadyState] = useState(SourceState.INITIALIZING);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(new XMLHttpRequest());
   const [progress, setProgress] = useState(0);
   const [chunk, setChunk] = useState('');
@@ -83,7 +77,7 @@ export const useSSE = (url: string) => {
   );
 
   const updateReadyState = useCallback(
-    (readyState: SSEState) => {
+    (readyState: SourceState) => {
       setReadyState(readyState);
       const event = new CustomEvent('readystatechange', { detail: { readyState } });
       dispatchEvent(event);
@@ -125,12 +119,12 @@ export const useSSE = (url: string) => {
   };
 
   const close = useCallback(() => {
-    if (readyState === SSEState.CLOSED) return;
+    if (readyState === SourceState.CLOSED) return;
 
     xhr?.abort();
     setXhr(null);
 
-    updateReadyState(SSEState.CLOSED);
+    updateReadyState(SourceState.CLOSED);
   }, [readyState, updateReadyState, xhr]);
 
   const onStreamFailure = useCallback(
@@ -155,10 +149,10 @@ export const useSSE = (url: string) => {
         return;
       }
 
-      if (readyState === SSEState.CONNECTING) {
+      if (readyState === SourceState.CONNECTING) {
         const event = new CustomEvent('open');
         dispatchEvent(event);
-        updateReadyState(SSEState.OPEN);
+        updateReadyState(SourceState.OPEN);
       }
 
       const data = xhr.responseText.substring(progress);
@@ -200,12 +194,12 @@ export const useSSE = (url: string) => {
     if (!xhr) return;
 
     if (xhr.readyState === XMLHttpRequest.DONE) {
-      updateReadyState(SSEState.CLOSED);
+      updateReadyState(SourceState.CLOSED);
     }
   }, [updateReadyState, xhr]);
 
   const stream = (options: RequestOptions) => {
-    updateReadyState(SSEState.CONNECTING);
+    updateReadyState(SourceState.CONNECTING);
 
     if (!xhr) return;
 
