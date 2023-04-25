@@ -18,9 +18,9 @@ This project is a chat interface that uses the OpenAI API to generate responses 
 
 ## Features
 
-- supports streaming API responses (vie `server-sent events`)
+- supports streaming API responses
 - code syntax highlighting and copy code snippets to the clipboard
-- cancal the response stream
+- cancel the response stream
 - reset the messages context
 - displays additional meta data for each response
 
