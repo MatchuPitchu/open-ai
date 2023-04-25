@@ -44,10 +44,10 @@ export const ChatForm = ({ onSubmit, onReset, isLoading }: IChatForm) => {
 
     if (!inputRef.current) return;
 
-    const input = inputRef.current.value.trimEnd();
+    const input = inputRef.current.value.trim();
 
     const syntaxHighlightingText = getSyntaxHighlightingText(shouldHighlightSyntax, input);
-    const prompt = `${input} ${syntaxHighlightingText}`;
+    const prompt = `${input} ${syntaxHighlightingText}`.trim();
 
     onSubmit([{ role: 'user', content: prompt }]);
 

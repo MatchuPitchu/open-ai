@@ -14,8 +14,8 @@ import './App.css';
 // TODO: model 3.5 für tests nutzen, da günstiger: https://openai.com/pricing
 
 export const App = () => {
-  // V2 Response Streaming with Context Memory
-  const { messages, submitPrompt, resetMessages, isLoading, closeStream } = useChatStream({
+  // V1 Response Streaming with Context Memory
+  const { messages, submitPrompt, resetMessages, isLoading, stopStream } = useChatStream({
     model: 'gpt-3.5-turbo',
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
   });
@@ -45,7 +45,7 @@ export const App = () => {
 
       <ChatForm onSubmit={submitPrompt} onReset={resetMessages} isLoading={isLoading} />
 
-      <button className={`button button--abort ${isLoading ? 'active' : ''}`} onClick={closeStream}>
+      <button className={`button button--abort ${isLoading ? 'active' : ''}`} onClick={stopStream}>
         Abfrage abbrechen
       </button>
     </>

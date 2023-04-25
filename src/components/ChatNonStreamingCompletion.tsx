@@ -4,10 +4,10 @@ import { ChatContent } from './ChatContent';
 import { ChatResponseLayout } from './ChatResponseLayout';
 import { Role } from './Role';
 
-export const ChatCompletion = () => {
+export const ChatNonStreamingCompletion = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // V1 Single Response without Context Memory
+  // V2 Single Response without Context Memory
   const { chatCourse, submitCompletionPrompt, isLoading } = useChatCompletion({
     model: 'gpt-3.5-turbo',
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
