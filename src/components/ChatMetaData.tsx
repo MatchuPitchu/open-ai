@@ -1,4 +1,4 @@
-import type { ChatRole } from '@/hooks/useChatStream';
+import type { ChatRole } from '@/hooks/useOpenAIChatStream';
 import { formatDate } from '@/utils/utils';
 
 interface IChatMetaData {

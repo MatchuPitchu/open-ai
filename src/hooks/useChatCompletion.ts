@@ -1,6 +1,6 @@
 import { Configuration, OpenAIApi } from 'openai';
 import { useMemo, useState } from 'react';
-import type { OpenAIStreamingProps } from './useChatStream';
+import type { OpenAIStreamingProps } from './useOpenAIChatStream';
 import type { ChatCompletionResponseMessage, ChatCompletionRequestMessage } from 'openai';
 
 export const useChatCompletion = ({ model, apiKey }: OpenAIStreamingProps) => {

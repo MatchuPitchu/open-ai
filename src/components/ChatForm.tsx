@@ -1,5 +1,5 @@
 import { useReducer, useRef } from 'react';
-import type { ChatMessageParams } from '@/hooks/useChatStream';
+import type { ChatMessageParams } from '@/hooks/useOpenAIChatStream';
 import { setCSSVariable } from '@/utils/utils';
 import type { FormEvent } from 'react';
 

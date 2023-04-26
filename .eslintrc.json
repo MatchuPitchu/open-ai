@@ -67,7 +67,7 @@
       }
     ],
     "import/no-duplicates": "error",
-    "max-depth": ["warn", 3],
+    "max-depth": ["warn", 4],
     "max-nested-callbacks": ["warn", 3],
     "multiline-comment-style": ["warn", "separate-lines"],
     "no-console": "warn",

@@ -4,7 +4,7 @@ import { ChatForm } from './components/ChatForm';
 import { ChatMetaData } from './components/ChatMetaData';
 import { ChatResponseLayout } from './components/ChatResponseLayout';
 import { Role } from './components/Role';
-import { useChatStream } from './hooks/useChatStream';
+import { useOpenAIChatStream } from './hooks/useOpenAIChatStream';
 import { getFormattedText } from './utils/utils';
 import './App.css';
 
@@ -15,7 +15,7 @@ import './App.css';
 
 export const App = () => {
   // V1 Response Streaming with Context Memory
-  const { messages, submitPrompt, resetMessages, isLoading, stopStream } = useChatStream({
+  const { messages, submitPrompt, resetMessages, isLoading, abortStream } = useOpenAIChatStream({
     model: 'gpt-3.5-turbo',
     apiKey: import.meta.env.VITE_OPEN_AI_KEY
   });
@@ -45,7 +45,7 @@ export const App = () => {
 
       <ChatForm onSubmit={submitPrompt} onReset={resetMessages} isLoading={isLoading} />
 
-      <button className={`button button--abort ${isLoading ? 'active' : ''}`} onClick={stopStream}>
+      <button className={`button button--abort ${isLoading ? 'active' : ''}`} onClick={abortStream}>
         Abfrage abbrechen
       </button>
     </>

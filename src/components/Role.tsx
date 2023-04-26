@@ -1,4 +1,4 @@
-import type { ChatRole } from '@/hooks/useChatStream';
+import type { ChatRole } from '@/hooks/useOpenAIChatStream';
 
 interface IRole {
   role: ChatRole;

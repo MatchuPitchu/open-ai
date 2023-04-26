@@ -17,11 +17,11 @@ export type ChatMessageToken = ChatCompletionResponseMessage & {
 };
 
 export type ChatMessageParams = ChatCompletionResponseMessage & {
-  timestamp?: number; // The timestamp of when the completion finished
+  timestamp?: number; // timestamp of completed request
   meta?: {
-    loading?: boolean; // If the completion is still being executed
-    responseTime?: string; // The total elapsed time the completion took
-    chunks?: ChatMessageToken[]; // The chunks returned as a part of streaming the execution of the completion
+    loading?: boolean; // completion state
+    responseTime?: string; // total elapsed time between completion start and end
+    chunks?: ChatMessageToken[]; // returned chunks of completion stream
   };
 };
 
@@ -51,7 +51,7 @@ export type OpenAIStreamingProps = {
   model: Model;
 };
 
-const CHAT_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_COMPLETIONS_URL = 'https://api.openai.com/v1/chat/completions';
 const MILLISECONDS_PER_SECOND = 1000;
 
 const updateLastItem = <T>(currentItems: T[], updatedLastItem: T) => {
@@ -66,7 +66,7 @@ const getOpenAIRequestMessage = ({ content, role }: ChatMessage): ChatCompletion
   role
 });
 
-const getRequestOptions = (
+const getOpenAIRequestOptions = (
   apiKey: string,
   model: Model,
   messages: ChatMessage[],
@@ -99,21 +99,21 @@ const createChatMessage = ({ content, role, meta }: ChatMessageParams): ChatMess
   }
 });
 
-export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
+export const useOpenAIChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [controller, setController] = useState<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const resetMessages = () => setMessages([]);
 
-  const stopStream = () => {
+  const abortStream = () => {
     // abort fetch request by calling abort() on the AbortController instance
     if (!controller) return;
     controller.abort();
     setController(null);
   };
 
-  const handleCloseStream = (startTimestamp: number) => {
+  const closeStream = (startTimestamp: number) => {
     // determine the final timestamp, and calculate the number of seconds the full request took.
     const endTimestamp = Date.now();
     const differenceInSeconds = (endTimestamp - startTimestamp) / MILLISECONDS_PER_SECOND;
@@ -121,12 +121,14 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
 
     // update last entry of message list with the final details
     setMessages((prevMessages) => {
-      const lastIndex = prevMessages.length - 1;
+      const lastMessage = prevMessages.at(-1);
+      if (!lastMessage) return [];
+
       const updatedLastMessage = {
-        ...prevMessages[lastIndex],
+        ...lastMessage,
         timestamp: endTimestamp,
         meta: {
-          ...prevMessages[lastIndex].meta,
+          ...lastMessage.meta,
           loading: false,
           responseTime: formattedDiff
         }
@@ -152,7 +154,10 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
       setController(newController);
 
       try {
-        const response = await fetch(CHAT_COMPLETIONS_URL, getRequestOptions(apiKey, model, chatMessages, signal));
+        const response = await fetch(
+          OPENAI_COMPLETIONS_URL,
+          getOpenAIRequestOptions(apiKey, model, chatMessages, signal)
+        );
 
         if (!response.body) return;
         // read response as data stream
@@ -167,7 +172,7 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            handleCloseStream(startTimestamp);
+            closeStream(startTimestamp);
             break;
           }
           // parse chunk of data
@@ -185,15 +190,17 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
             const chunkRole: ChatRole = parsedLine.choices[0].delta.role ?? '';
 
             // update last message entry in list with the most recent chunk
-            const lastIndex = currentMessages.length - 1;
+            const lastMessage = currentMessages.at(-1);
+            if (!lastMessage) return;
+
             const updatedLastMessage = {
-              content: `${currentMessages[lastIndex].content}${chunkContent}`,
-              role: `${currentMessages[lastIndex].role}${chunkRole}` as ChatRole,
+              content: `${lastMessage.content}${chunkContent}`,
+              role: `${lastMessage.role}${chunkRole}` as ChatRole,
               timestamp: 0,
               meta: {
-                ...currentMessages[lastIndex].meta,
+                ...lastMessage.meta,
                 chunks: [
-                  ...currentMessages[lastIndex].meta.chunks,
+                  ...lastMessage.meta.chunks,
                   {
                     content: chunkContent,
                     role: chunkRole,
@@ -221,5 +228,5 @@ export const useChatStream = ({ model, apiKey }: OpenAIStreamingProps) => {
     [apiKey, isLoading, messages, model]
   );
 
-  return { messages, submitPrompt, resetMessages, isLoading, stopStream };
+  return { messages, submitPrompt, resetMessages, isLoading, abortStream };
 };
