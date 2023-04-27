@@ -180,8 +180,8 @@ export const useOpenAIChatStream = ({ model, apiKey }: OpenAIStreamingProps) => 
           const lines = chunk.split(/(\n){2}/);
 
           const parsedLines: ChatCompletionChunk[] = lines
-            .map((line) => line.replace(/(\n)?^data:\s*/, '').trim())
-            .filter((line) => line !== '' && line !== '[DONE]') // remove empty lines and "[DONE]"; // remove 'data:' prefix
+            .map((line) => line.replace(/(\n)?^data:\s*/, '').trim()) // remove 'data:' prefix
+            .filter((line) => line !== '' && line !== '[DONE]') // remove empty lines and "[DONE]"
             .map((line) => JSON.parse(line)); // parse JSON string
 
           for (const parsedLine of parsedLines) {
